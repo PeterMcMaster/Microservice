@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from uuid import UUID, uuid4
 
 class AccountBase(BaseModel):
     username: str = Field(
@@ -76,6 +77,11 @@ class AccountUpdate(BaseModel):
 
 class AccountRead(AccountBase):
     """Read payload for an Account, including metadata."""
+    id: UUID = Field(
+        default_factory=uuid4,
+        description="Server-generated Account ID.",
+        json_schema_extra={"example": "99999999-9999-4999-8999-999999999999"},
+    )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Creation timestamp (UTC).",

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from uuid import UUID, uuid4
 
 class ClassBase(BaseModel):
     name: str = Field(
@@ -63,6 +64,11 @@ class ClassUpdate(BaseModel):
 
 class ClassRead(ClassBase):
     """Read payload for a Class."""
+    id: UUID = Field(
+        default_factory=uuid4,
+        description="Server-generated Class ID.",
+        json_schema_extra={"example": "99999999-9999-4999-8999-999999999999"},
+    )
     created_at: datetime = Field(
         default_factory=datetime.utcnow,
         description="Creation timestamp (UTC).",
