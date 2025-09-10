@@ -13,6 +13,8 @@ from typing import Optional
 
 from models.person import PersonCreate, PersonRead, PersonUpdate
 from models.address import AddressCreate, AddressRead, AddressUpdate
+from models.classes import ClassCreate, ClassRead, ClassUpdate
+from models.account import AccountCreate, AccountRead, AccountUpdate
 from models.health import Health
 
 port = int(os.environ.get("FASTAPIPORT", 8000))
@@ -22,10 +24,12 @@ port = int(os.environ.get("FASTAPIPORT", 8000))
 # -----------------------------------------------------------------------------
 persons: Dict[UUID, PersonRead] = {}
 addresses: Dict[UUID, AddressRead] = {}
+classes: Dict[UUID, ClassRead] = {}
+accounts: Dict[UUID, AccountRead] = {}
 
 app = FastAPI(
-    title="Person/Address API",
-    description="Demo FastAPI app using Pydantic v2 models for Person and Address",
+    title="Person/Address/Class/Account API",
+    description="Demo FastAPI app using Pydantic v2 models for Person, Address, Class, and Account.",
     version="0.1.0",
 )
 
@@ -158,6 +162,87 @@ def update_person(person_id: UUID, update: PersonUpdate):
     stored.update(update.model_dump(exclude_unset=True))
     persons[person_id] = PersonRead(**stored)
     return persons[person_id]
+
+# -----------------------------------------------------------------------------
+# Class endpoints
+# -----------------------------------------------------------------------------
+@app.post("/classes", response_model=ClassRead, status_code=201)
+def create_class(cls: ClassCreate):
+    # Each class gets its own UUID; stored as ClassRead
+    class_read = ClassRead(**cls.model_dump())
+    classes[class_read.id] = class_read
+    return class_read
+
+@app.get("/classes", response_model=List[ClassRead])
+def list_classes(
+    name: Optional[str] = Query(None, description="Filter by class name"),
+    description: Optional[str] = Query(None, description="Filter by class description"), 
+):
+    results = list(classes.values())
+
+    if name is not None:
+        results = [c for c in results if c.name == name]
+    if description is not None:
+        results = [c for c in results if c.description == description]
+
+    return results
+
+@app.get("/classes/{class_id}", response_model=ClassRead)
+def get_class(class_id: UUID):
+    if class_id not in classes:
+        raise HTTPException(status_code=404, detail="Class not found")
+    return classes[class_id]
+
+@app.patch("/classes/{class_id}", response_model=ClassRead)
+def update_class(class_id: UUID, update: ClassUpdate):
+    if class_id not in classes:
+        raise HTTPException(status_code=404, detail="Class not found")
+    stored = classes[class_id].model_dump()
+    stored.update(update.model_dump(exclude_unset=True))
+    classes[class_id] = ClassRead(**stored)
+    return classes[class_id]
+
+# -----------------------------------------------------------------------------
+# Account endpoints
+# -----------------------------------------------------------------------------
+@app.post("/accounts", response_model=AccountRead, status_code=201)
+def create_account(account: AccountCreate):
+    # Each account gets its own UUID; stored as AccountRead
+    account_read = AccountRead(**account.model_dump())
+    accounts[account_read.id] = account_read
+    return account_read
+
+@app.get("/accounts", response_model=List[AccountRead])
+def list_accounts(
+    username: Optional[str] = Query(None, description="Filter by username"),
+    number_id: Optional[int] = Query(None, description="Filter by number ID"),
+    amount: Optional[float] = Query(None, description="Filter by amount"),
+):
+    results = list(accounts.values())
+
+    if username is not None:
+        results = [a for a in results if a.username == username]
+    if number_id is not None:
+        results = [a for a in results if a.number_id == number_id]
+    if amount is not None:
+        results = [a for a in results if a.amount == amount]
+
+    return results
+
+@app.get("/accounts/{account_id}", response_model=AccountRead)
+def get_account(account_id: UUID):
+    if account_id not in accounts:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return accounts[account_id] 
+
+@app.patch("/accounts/{account_id}", response_model=AccountRead)
+def update_account(account_id: UUID, update: AccountUpdate):
+    if account_id not in accounts:
+        raise HTTPException(status_code=404, detail="Account not found")
+    stored = accounts[account_id].model_dump()
+    stored.update(update.model_dump(exclude_unset=True))
+    accounts[account_id] = AccountRead(**stored)
+    return accounts[account_id]
 
 # -----------------------------------------------------------------------------
 # Root
